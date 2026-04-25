@@ -6,6 +6,8 @@
 # Clear suffix list
 .SUFFIXES:
 
+SHELL = /bin/sh
+
 # Name of final executable
 override OUTPUT := kernel.elf
 
@@ -82,13 +84,13 @@ endif
 
 # Get all files to be compiled minus architecture specific files and clean up the result
 # * Note to self: the first -not -path doesn't exclude the second one!!!
-override ALLFILES := $(shell find -L . -type f \
-	-not -path "*/arch/*" \
-	-not -path "arch/*" \
-	-not -path "$(BUILDDIR)/*" \
-	-not -path "freestnd-c-hdrs-0bsd/*" \
-	-not -path "limine-protocol/*" \
-	2>/dev/null | sed "s|^\./||" | LC_ALL=C sort -u)
+override ALLFILES := $(shell find -L . \( \
+		-path "*/arch" -o \
+		-path "arch" -o \
+		-path "$(BUILDDIR)" -o \
+		-path "freestnd-c-hdrs-0bsd" -o \
+		-path "limine-protocol" \) -prune \
+	-o -type f -print 2>/dev/null | sed "s|^\./||" | LC_ALL=C sort -u)
 
 # Add architecture specific files
 override ALLFILES += $(shell find -L arch/$(ARCH) -type f 2>/dev/null | sed "s|^\./||" | LC_ALL=C sort -u)
@@ -97,37 +99,42 @@ override ALLFILES += $(shell find -L arch/$(ARCH) -type f 2>/dev/null | sed "s|^
 override CFILES := $(filter %.c, $(ALLFILES))
 override ASFILES := $(filter %.S, $(ALLFILES))
 ifeq ($(ARCH), x86_64)
-override NASMFILES := $(filter %.asm, $(ALLFILES))
+	override NASMFILES := $(filter %.asm, $(ALLFILES))
 endif
 
 # We only append .o so we can set specific compilation rules to distinct file types
 override OBJ := $(addprefix $(BUILDDIR)/obj-$(ARCH)/, $(CFILES:.c=.c.o) $(ASFILES:.S=.S.o))
 override HEADERDEPS := $(addprefix $(BUILDDIR)/obj/, $(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
-ifeq ($(ARCH),x86_64)
-override OBJ += $(addprefix $(BUILDDIR)/obj-$(ARCH)/, $(NASMFILES:.asm=.asm.o))
+ifeq ($(ARCH), x86_64)
+	override OBJ += $(addprefix $(BUILDDIR)/obj-$(ARCH)/, $(NASMFILES:.asm=.asm.o))
 endif
 
+# Get all needed directories
+override ALLOBJDIRS := $(sort $(dir $(OBJ)))
 
-.PHONY: all getDeps clean
+
+.PHONY: all createObjDirs getDeps clean
 all: $(BUILDDIR)/bin-$(ARCH)/$(OUTPUT)
 
+createObjDirs: $(ALLOBJDIRS)
+
 -include $(HEADER_DEPS)
+
+$(ALLOBJDIRS):
+	mkdir -p "$@"
 
 $(BUILDDIR)/bin-$(ARCH)/$(OUTPUT): GNUmakefile linker.lds $(OBJ)
 	mkdir -p "$(dir $@)"
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
-$(BUILDDIR)/obj-$(ARCH)/%.c.o: %.c GNUmakefile
-	mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+$(BUILDDIR)/obj-$(ARCH)/%.c.o: %.c GNUmakefile createObjDirs
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-$(BUILDDIR)/obj-$(ARCH)/%.S.o: %.S GNUmakefile
-	mkdir -p "$(dir $@)"
-	$(CC) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
+$(BUILDDIR)/obj-$(ARCH)/%.S.o: %.S GNUmakefile createObjDirs
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 ifeq ($(ARCH), x86_64)
-$(BUILDDIR)/obj-$(ARCH)/%.asm.o: %.asm GNUmakefile
-	mkdir -p "$(dir $@)"
+$(BUILDDIR)/obj-$(ARCH)/%.asm.o: %.asm GNUmakefile createObjDirs
 	nasm $(NASMFLAGS) $< -o $@
 endif
 

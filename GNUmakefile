@@ -4,6 +4,8 @@
 # Clear suffix list
 .SUFFIXES:
 
+SHELL = /bin/sh
+
 ARCH := x86_64
 QEMUFLAGS := -m 2G
 
@@ -22,16 +24,10 @@ HOSTCPPFLAGS :=
 HOSTLDFLAGS :=
 HOSTLIBS :=
 
-.PHONY: all all-hdd run getKernelDeps kernel clean
+.PHONY: all all-hdd run getKernelDeps kernel clean distclean
 
 all: $(IMAGENAME).iso
-
 all-hdd: $(IMAGENAME).hdd
-
-run:
-	qemu-system-$(ARCH) -M q35 \
-		-cdrom $(IMAGENAME).iso \
-		$(QEMUFLAGS)
 
 # Limine stuff
 limine/limine:
@@ -97,6 +93,15 @@ ifeq ($(ARCH), x86_64)
 	mcopy -i $(IMAGENAME).hdd@@1M limine/BOOTIA32.EFI ::/EFI/BOOT
 endif
 
+
+run:
+	qemu-system-$(ARCH) -M q35 \
+		-cdrom $(IMAGENAME).iso \
+		$(QEMUFLAGS)
+
 clean:
 	$(MAKE) -C kernel clean
-	rm -rf isoRoot $(IMAGENAME).iso $(IMAGENAME).hdd
+	rm -rf isoRoot
+
+distclean: clean
+	rm -f $(IMAGENAME).iso $(IMAGENAME).hdd
