@@ -1,29 +1,37 @@
 
 # This is a modified version of this GNUmakefile: https://github.com/Limine-Bootloader/limine-c-template/blob/trunk/kernel/GNUmakefile
 
-# * NOTE TO SELF: It's probably a good idea to use $(CURDIR) to get absolute file paths.
-
 # Clear suffix list
 .SUFFIXES:
 
 SHELL = /bin/sh
+ARCH := x86_64
+
+ifeq ($(filter $(ARCH), x86_64),)
+    $(error Architecture $(ARCH) not supported)
+endif
+
+# Change PREFIX if the cross compiler is in another directory
+PREFIX := /usr/local/gcc-cross
+TOOLCHAINPREFIX := $(ARCH)-elf-
+
+CC := $(PREFIX)/bin/$(TOOLCHAINPREFIX)gcc
+LD := $(PREFIX)/bin/$(TOOLCHAINPREFIX)ld
+
+# Probably won't use these but I'll set them anyway
+AS := $(PREFIX)/bin/$(TOOLCHAINPREFIX)as
+AR := $(PREFIX)/bin/$(TOOLCHAINPREFIX)ar
+STRIP := $(PREFIX)/bin/$(TOOLCHAINPREFIX)strip
+
+CFLAGS := -g -O2 -pipe
+CPPFLAGS :=
+LDFLAGS :=
 
 # Name of final executable
 override OUTPUT := kernel.elf
 
 override BUILDDIR := build
 override INCLUDEDIR := include
-
-ARCH := x86_64
-PREFIX := $HOME/gcc-cross
-
-ifeq ($(filter $(ARCH), x86_64),)
-    $(error Architecture $(ARCH) not supported)
-endif
-
-CFLAGS := -g -O2 -pipe
-CPPFLAGS :=
-LDFLAGS :=
 
 ifeq ($(ARCH), x86_64)
     NASMFLAGS := -g
@@ -83,7 +91,7 @@ endif
 
 
 # Get all files to be compiled minus architecture specific files and clean up the result
-# * Note to self: the first -not -path doesn't exclude the second one!!!
+# * Note to self: the first -path doesn't exclude the second one!!!
 override ALLFILES := $(shell find -L . \( \
 		-path "*/arch" -o \
 		-path "arch" -o \
@@ -113,7 +121,7 @@ endif
 override ALLOBJDIRS := $(sort $(dir $(OBJ)))
 
 
-.PHONY: all createObjDirs getDeps clean
+.PHONY: all createObjDirs getDeps clean distclean
 all: $(BUILDDIR)/bin-$(ARCH)/$(OUTPUT)
 
 createObjDirs: $(ALLOBJDIRS)
@@ -140,12 +148,15 @@ endif
 
 
 getDeps:
-	rm -rf cc-runtime limine-protocol freestnd-c-hdrs-0bsd
-	mkdir -p cc-runtime limine-protocol freestnd-c-hdrs-0bsd
-	git clone --depth 1 https://github.com/osdev0/cc-runtime.git
+	rm -rf limine-protocol freestnd-c-hdrs-0bsd
+	mkdir -p limine-protocol freestnd-c-hdrs-0bsd
 	git clone --depth 1 https://github.com/Limine-Bootloader/limine-protocol.git
 	git clone --depth 1 https://github.com/osdev0/freestnd-c-hdrs-0bsd.git
 
 
 clean:
 	rm -rf $(BUILDDIR)/bin-$(ARCH) $(BUILDDIR)/obj-$(ARCH)
+
+
+distclean: clean
+	rm -rf freestnd-c-hdrs-0bsd limine-protocol

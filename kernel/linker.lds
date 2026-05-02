@@ -7,13 +7,13 @@ ENTRY(kernelMain)
 
 /* Define the program headers we want so the bootloader gives us the right */
 /* MMU permissions; this also allows us to exert more control over the linking */
-/* process. */
+/* process.*/
 PHDRS
 {
     limine_requests PT_LOAD;
-    text PT_LOAD;
-    rodata PT_LOAD;
-    data PT_LOAD;
+    text PT_LOAD FLAGS((1 << 0) | (1 << 2));
+    rodata PT_LOAD FLAGS((1 << 2));
+    data PT_LOAD FLAGS((1 << 1)| (1 << 2));
 }
 
 SECTIONS
@@ -66,6 +66,9 @@ SECTIONS
         *(.bss .bss.*)
         *(COMMON)
     } :data
+
+	/* This may become useful? For now i put i here */
+	kernelSize = . - 0xffffffff80000000;
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {

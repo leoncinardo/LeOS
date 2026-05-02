@@ -1,4 +1,5 @@
 
+#include <stdint.h>
 #include <arch/x86_64/include/idt.h>
 
 
@@ -19,7 +20,7 @@ static void idtSetEntry(uint8_t i, void* isrAddr, uint8_t ist, uint8_t flags) {
 	idt[i].ist = ist;
 	idt[i].flags = flags;
 	idt[i].isr1 = ((uint64_t)isrAddr >> 16) & 0xFFFFFFFFFFFF;
-	idt[i].reserved = (uint32_t)0;
+	idt[i].reserved = 0;
 }
 
 

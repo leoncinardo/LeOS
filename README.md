@@ -1,28 +1,38 @@
 
 # FeatherOS
-A WIP x86_64 hobby operating system made in C and Assembly.
-
+A WIP x86_64 hobby operating system made in C and Assembly by an engineering student in his free time.
 
 ## 1. But why this project?
-The real question is why not? I like challenges so why not create an operating system? I want to have a deeper insight on how computers work and attempt to create projects to sharpen my skills and abilities.
+Well why not? I like challenges so why not create an operating system? I want to have deeper insights on how computers work and create projects to sharpen my skills and abilities.
 
-<!-- ## 2. Compiling
+## 2. Compiling
 Before trying to compile you need these:
- - a GCC cross compiler for x86_64
- - NASM installed
+ - a GCC cross compiler(x86_64)
+ - NASM
+ - internet connection
 
+ An internet connection is needed to download needed dependencies.
+
+ It is assumed your toolchain is in `/usr/local/gcc-cross`. To tell the makefiles to use a toolchain change the `PREFIX` and `TOOLCHAINPREFIX` variables like so:
+ ```sh
+make targetHere PREFIX=yourPathHere TOOLCHAINPREFIX=yourPrefixHere
+ ```
+
+By default they are set like so:
+```sh
+make targetHere PREFIX=/usr/local/gcc-cross TOOLCHAINPREFIX=x86_64-elf-
+ ```
 
 ### 2.1 Generating OS images
-The makefile can generate .iso and .hdd images but first you need to get all needed dependencies for the kernel(for now they are 3) and the bootloader(Limine), so you need an internet connection. To do so open you're favorite terminal and cd into the `kernel/` directory and run:
+Download kernel dependencies:
 
 ```sh
-make getDeps
+make getKernelDeps
 ```
 
-After this cd back into the main project directory.
-To generate a .iso image simply run:
+To generate a .iso image run:
 ```sh
-make
+make all
 ```
 
 To generate a .hdd image run:
@@ -30,16 +40,15 @@ To generate a .hdd image run:
 make all-hdd
 ```
 
-Both commands will download the `Limine bootloader` the first time they're run.
-
 ### 2.2 Compiling only the kernel
-You first need to download needed dependecies as shown in section 2.1.
+You first need to download needed dependecies as shown before.
+
 From the main project directory run:
 ```sh
 make kernel
 ```
 
-or from the `kernel/` directory run:
+or from the `kernel` directory run:
 ```sh
 make
-``` -->
+```

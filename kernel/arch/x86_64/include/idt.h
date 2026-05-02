@@ -1,7 +1,6 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <arch/x86_64/include/gdt.h>
 
 #define idtEntries 256 // Entries > 256 are ignored
@@ -15,6 +14,13 @@ typedef struct {
 
 	uint64_t intIndex;
 	uint64_t errorCode;
+
+	// Stuff pushed by the CPU
+	uint64_t rip;
+	uint64_t cs; // Padded with 0s
+	uint64_t cpuFlags;
+	uint64_t rsp;
+	uint64_t ss;
 
 } __attribute__((packed)) intStackFrame_t;
 

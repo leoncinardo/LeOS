@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <stdint.h>
-
 #define gdtEntries 6
 
 #define kernelCodeSeg 0x08

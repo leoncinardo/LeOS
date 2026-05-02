@@ -11,7 +11,6 @@ SECTION .text
 %macro setIsrInt 1
 	static isrStub%+%1
     isrStub%+%1:
-		; I just discovered the existance of push2p/pop2p
 		; * NOTE: Looks like that for System V ABI only volatile registers should be saved, those are:
 		; * rax, rcx, rdx, rsi, rdi, r8 to r11
 
@@ -21,29 +20,36 @@ SECTION .text
 		
 		push %1 ; Interrupt index in isrStubTable
 
-		pushfq
-		cld
-
-		push2p rax, rcx
-		push2p rdx, rsi
-		push2p rdi, r8
-		push2p r9, r10
-		push r11
-
-		mov rdi, rsp ; First argument for isrHandler
-		call isrHandler
-
-		pop r11
-		pop2p r10, r9
-		pop2p r8, rdi
-		pop2p rsi, rdx
-		pop2p rcx, rax
-		popfq
-		add rsp, 16 ; Remove errror code/fake-error code and int index from stack
-
-        iretq
+		jmp isrStubCommon
 
 %endmacro
+
+
+static isrStubCommon
+isrStubCommon:
+	pushfq
+	cld
+
+	; I just discovered the existance of push2p/pop2p
+	push2p rax, rcx
+	push2p rdx, rsi
+	push2p rdi, r8
+	push2p r9, r10
+	push r11
+
+	mov rdi, rsp ; First argument for isrHandler
+	call isrHandler
+
+	pop r11
+	pop2p r10, r9
+	pop2p r8, rdi
+	pop2p rsi, rdx
+	pop2p rcx, rax
+	popfq
+	add rsp, 16 ; Remove errror code/fake-error code and int index from stack
+	
+    iretq
+
 
 
 GLOBAL isrSetStubTable
