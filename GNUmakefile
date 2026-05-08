@@ -46,7 +46,7 @@ getKernelDeps:
 
 
 # I think we should compile the kernel, right?
-kernel:
+kernel: getKernelDeps
 	$(MAKE) -C kernel
 
 
@@ -110,5 +110,5 @@ clean:
 
 distclean:
 	$(MAKE) -C kernel distclean
-	rm -rf limine-binary
+	rm -rf isoRoot limine-binary
 	rm -f $(IMAGENAME).iso $(IMAGENAME).hdd

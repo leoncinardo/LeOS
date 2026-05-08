@@ -118,7 +118,7 @@ ifeq ($(ARCH), x86_64)
 endif
 
 # Get all needed directories
-override ALLOBJDIRS := $(sort $(dir $(OBJ)))
+override ALLOBJDIRS := $(sort $(dir $(OBJ))) $(BUILDDIR)/bin-$(ARCH)
 
 
 .PHONY: all createObjDirs getDeps clean distclean
@@ -128,11 +128,10 @@ createObjDirs: $(ALLOBJDIRS)
 
 -include $(HEADER_DEPS)
 
-$(ALLOBJDIRS):
+$(ALLOBJDIRS): GNUmakefile getDeps
 	mkdir -p "$@"
 
 $(BUILDDIR)/bin-$(ARCH)/$(OUTPUT): GNUmakefile linker.lds $(OBJ)
-	mkdir -p "$(dir $@)"
 	$(LD) $(LDFLAGS) $(OBJ) -o $@
 
 $(BUILDDIR)/obj-$(ARCH)/%.c.o: %.c GNUmakefile createObjDirs
@@ -148,10 +147,12 @@ endif
 
 
 getDeps:
+ifeq ("$(wildcard limine-protocol freestnd-c-hdrs-0bsd)", "")
 	rm -rf limine-protocol freestnd-c-hdrs-0bsd
 	mkdir -p limine-protocol freestnd-c-hdrs-0bsd
 	git clone --depth 1 https://github.com/Limine-Bootloader/limine-protocol.git
 	git clone --depth 1 https://github.com/osdev0/freestnd-c-hdrs-0bsd.git
+endif
 
 
 clean:

@@ -24,12 +24,6 @@ make targetHere PREFIX=/usr/local/gcc-cross TOOLCHAINPREFIX=x86_64-elf-
  ```
 
 ### 2.1 Generating OS images
-Download kernel dependencies:
-
-```sh
-make getKernelDeps
-```
-
 To generate a .iso image run:
 ```sh
 make all
@@ -41,8 +35,6 @@ make all-hdd
 ```
 
 ### 2.2 Compiling only the kernel
-You first need to download needed dependecies as shown before.
-
 From the main project directory run:
 ```sh
 make kernel

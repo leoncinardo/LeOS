@@ -14,8 +14,8 @@ void isrHandler(intStackFrame_t* stackFrame) {
 }
 
 
-static void idtSetEntry(uint8_t i, void* isrAddr, uint8_t ist, uint8_t flags) {
-	idt[i].isr0 = (uint16_t)((uintptr_t)isrAddr & 0xFFFF);
+static void idtSetEntry(uint8_t i, uint64_t* isrAddr, uint8_t ist, uint8_t flags) {
+	idt[i].isr0 = (uint16_t)((uint64_t)isrAddr & 0xFFFF);
 	idt[i].kernelCs = kernelCodeSeg;
 	idt[i].ist = ist;
 	idt[i].flags = flags;
