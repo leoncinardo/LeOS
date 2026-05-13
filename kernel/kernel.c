@@ -9,6 +9,7 @@
 #include <memory/include/memory.h>
 #include <memory/include/pmm.h>
 #include <graphics/include/screen.h>
+#include <graphics/include/print.h>
 
 extern void sseEnable(void); 
 
@@ -47,6 +48,10 @@ void __attribute__((section(".entry"))) kernelMain(void) {
 
 	// pmmInit();
 
+	screenPaintBackground(0x1A1B25);
+	screenDrawRectangle(250, 200, 300, 150, 0xFFFFFF);
+	kprint("Well well well", 30, 30, 0x67E544);
+	kprintChar(0x23, 30, 46, 0xFFFFFF);
 
     halt();
 }
