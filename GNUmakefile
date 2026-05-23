@@ -1,11 +1,8 @@
 
-# This is a modified version of this GNUmakefile: https://github.com/Limine-Bootloader/limine-c-template/blob/trunk/GNUmakefile
-
 # Clear suffix list
 .SUFFIXES:
 
 SHELL = /bin/sh
-
 ARCH := x86_64
 QEMUFLAGS := -m 2G
 

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #define gdtEntries 6
 
 #define kernelCodeSeg 0x10
@@ -8,7 +10,7 @@
 #define userCodeSeg 0x30
 #define userDataSeg 0x40
 #define kernelTssSeg 0x50
-#define userTssSeg 0x60
+#define tssSeg 0x60
 
 
 typedef struct {

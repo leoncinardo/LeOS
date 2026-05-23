@@ -7,10 +7,10 @@
 
 
 __attribute__((aligned(0x10))) static idtEntry_t idt[idtEntries];
-extern void* isrStubTable[];
+extern void *restrict isrStubTable[];
 extern void isrSetStubTable(void);
 
-static const char* isrExceptionsNames[] = {
+static const char *isrExceptionsNames[] = {
     "Division by 0",
     "Debug exception",
     "Non-maskable interrupt exception",
@@ -46,13 +46,13 @@ static const char* isrExceptionsNames[] = {
 };
 
 
-void isrExceptionHandler(intStackFrame_t* stackFrame) {
+void isrExceptionHandler(intStackFrame_t *restrict stackFrame) {
 	kPrintf("\n\nException: %s", isrExceptionsNames[stackFrame->intIndex]);
 
 }
 
 
-static void idtSetEntry(uint8_t i, uint64_t* isrAddr, uint8_t ist, uint8_t flags) {
+static void idtSetEntry(uint8_t i, uint64_t *restrict isrAddr, uint8_t ist, uint8_t flags) {
 	idt[i].isr0 = ((uint64_t)isrAddr & 0xFFFF);
 	idt[i].kernelCs = kernelCodeSeg;
 	idt[i].ist = ist;

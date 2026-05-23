@@ -6,7 +6,6 @@
 
 #include <arch/x86_64/include/gdt.h>
 #include <arch/x86_64/include/idt.h>
-#include <memory/include/memory.h>
 #include <memory/include/pmm.h>
 #include <drivers/include/serial.h>
 #include <graphics/include/screen.h>
@@ -26,31 +25,30 @@ static volatile struct limine_date_at_boot_request limineBootDateRequest = {
 
 
 static void halt() {
-    for (;;) {
-        asm volatile("hlt");
-    }
+    for (;;) asm volatile("hlt");
 }
 
 
 void __attribute__((section(".entry"))) kernelMain(void) {
-    // If revisions don't match we have quite a problem
-    if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) {
-        halt();
-    }
-
 	asm volatile("cli");
+
+    // If revisions don't match we have quite a problem
+    if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) halt();
+
 	gdtInit();
 	sseEnable();
 	idtInit();
+	
 	asm volatile("sti");
 	
-	screenInit();
+	if (screenInit()) halt();
 	screenPaintBackground(defScreenBackgroundColour);
 
-	// pmmInit();
-	if (serialInit()) kPrintf("Failed: setup of serial ports driver\n");
+	if (serialInit()) kPrintf("%bFailed:%b setup of serial ports driver\n", 0xED2139, 0xFFFFFF);
+	if (pmmInit()) kPrintf("%bFailed:%b init of physical page frame allocator\n", 0xED2139, 0xFFFFFF);
 
-	kPrintf("\n -- // FeatherOS\n\n%s", "This is a test");
+	kPrintf("\n%b-- // FeatherOS\n\n", 0x67E544);
+	kPrintf("sizeof gdtEntry_t: %u", sizeof(gdtEntry_t));
 
     halt();
 }

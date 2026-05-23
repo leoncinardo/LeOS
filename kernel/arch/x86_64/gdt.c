@@ -1,5 +1,4 @@
 
-#include <stdint.h>
 #include <arch/x86_64/include/gdt.h>
 
 
@@ -8,29 +7,30 @@
 
 
 __attribute__((aligned(0x10))) static gdtEntry_t gdt[gdtEntries];
-extern void gdtLoad(gdtGdtr_t* gdtr);
+extern void gdtLoad(gdtGdtr_t *gdtr);
 
 
 static void gdtSetEntry(uint8_t i, uint64_t base, uint32_t limit, uint8_t access, uint8_t flags) {
+	if (i > gdtEntries - 1) return;
+
 	gdt[i].access = access;
 	gdt[i].flags = flags;
 
 	// For non-system seg descriptors base and limit values are ignored
-	if (base != 0 && limit != 0) goto sysSeg;
+	if (base == 0 && limit == 0) {
+		gdt[i].limit0 = 0;
+		gdt[i].limit1 = 0;
+		gdt[i].base0 = 0;
+		gdt[i].base1 = 0;
+		gdt[i].reserved = 0;
 
-	gdt[i].limit0 = 0;
-	gdt[i].limit1 = 0;
-	gdt[i].base0 = 0;
-	gdt[i].base1 = 0;
-	gdt[i].reserved = 0;
+		return;
+	}
 
-	return;
-
-	sysSeg:
 	gdt[i].limit0 = (uint16_t)(limit & 0xFFFF);
-	gdt[i].limit1 = (uint8_t)((limit << 16) & 0xF);
+	gdt[i].limit1 = (uint8_t)((limit >> 16) & 0xF);
 	gdt[i].base0 = (uint32_t)(base & 0xFFFFFF);
-	gdt[i].base1 = (base << 24) & 0xFFFFFFFFFF;
+	gdt[i].base1 = (base >> 24) & 0xFFFFFFFFFF;
 	gdt[i].reserved = 0;
 }
 

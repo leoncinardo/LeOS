@@ -3,9 +3,6 @@ CPU X64
 DEFAULT REL
 EXTERN isrExceptionHandler
 
-; * NOTE: I asked an ai model some stuff and it recommended to initialize isrStubTable at runtime,
-; * so I did that(yes I wrote the code by myself).
-
 SECTION .text
 
 %macro setIsrInt 1
@@ -27,10 +24,9 @@ isrStubExceptionCommon:
 	pushfq
 	cld
 
-	; * NOTE: Looks like that for System V ABI only volatile registers should be saved, those are:
-	; * rax, rcx, rdx, rsi, rdi, r8 to r11
-	; To clean this up: on new hardware that supports APX two push/pop instructions 
-	; can be replaced by push2p/pop2p. I don't care enought to check for support so I'll leave it like this
+	; * NOTE: For System V ABI only volatile registers should be saved, those are: rax, rcx, rdx, rsi, rdi, r8 to r11
+	; To clean this up: on new hardware that supports APX two push/pop instructions can be replaced by push2p/pop2p.
+	; I don't care enought to check for support so I'll leave it like this
 	push rax
 	push rcx
 	push rdx

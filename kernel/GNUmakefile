@@ -1,6 +1,4 @@
 
-# This is a modified version of this GNUmakefile: https://github.com/Limine-Bootloader/limine-c-template/blob/trunk/kernel/GNUmakefile
-
 # Clear suffix list
 .SUFFIXES:
 
@@ -38,7 +36,8 @@ endif
 override CFLAGS += \
     -Wall \
     -Wextra \
-    -std=gnu11 \
+	-Wpedantic \
+    -std=gnu17 \
     -nostdinc \
     -ffreestanding \
     -fno-stack-protector \
@@ -75,6 +74,7 @@ ifeq ($(ARCH), x86_64)
         -mabi=sysv \
         -mno-80387 \
         -mno-mmx \
+		-mno-sse \
         -mno-red-zone \
         -mcmodel=kernel
 

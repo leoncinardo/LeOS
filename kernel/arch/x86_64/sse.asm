@@ -4,6 +4,9 @@ DEFAULT REL
 
 SECTION .text
 
+; * NOTE: SSE isn't used for now(see compiler flags) because I don't save XMM registers when an ISR pops up.
+; * I still enable SSE because why not.
+
 
 ; See Intel manual volume 3A chapter 12.6
 GLOBAL sseEnable

@@ -3,11 +3,8 @@
 #include <drivers/include/serial.h>
 #include <arch/x86_64/include/ioPorts.h>
 
-// https://osdev.wiki/wiki/Serial_Ports
-
 
 uint8_t serialRead(void) {
-	// No I won't check Line State Register for errors
 	while (!(inb(COM1 + 5) & 1));
 
 	return inb(COM1);
@@ -25,7 +22,7 @@ int serialInit(void) {
 	// Set baud rate divisor
 	outb(COM1 + 3, 0x80); // Set DLAB bit in Line Control Register
 	outb(COM1, 0x3); // Divisor low
-	outb(COM1 + 1, 0x0); // DIvisor high
+	outb(COM1 + 1, 0x0); // Divisor high
 	outb(COM1 + 3, 0x3); // Configure Line Control Register(clear DLAB, 8 bits, 1 stop bit)
 
 	outb(COM1 + 2, 0xC7); // Enable FIFO, clear them, with 14-byte threshold
