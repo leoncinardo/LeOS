@@ -10,7 +10,7 @@ ifeq ($(filter $(ARCH), x86_64),)
     $(error Architecture $(ARCH) not supported)
 endif
 
-override IMAGENAME := featherOS-$(ARCH)
+override IMAGENAME := leOS-$(ARCH)
 override KERNELOUTPUT := kernel.elf
 KERNELBUILDDIR := kernel/build
 

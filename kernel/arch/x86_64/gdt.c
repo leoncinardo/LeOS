@@ -49,5 +49,4 @@ void gdtInit(void) {
 	gdtr.offset = (uint64_t)&gdt;
 	
 	gdtLoad(&gdtr);
-
 }

@@ -1,9 +1,9 @@
 
-# FeatherOS
-A WIP x86_64 hobby operating system made in C and Assembly by an engineering student in his free time.
+# LeOS
+A WIP x86_64 hobby operating system made in C and Assembly.
 
 ## 1. But why this project?
-Well why not? I like challenges so why not create an operating system? I want to have deeper insights on how computers work and create projects to sharpen my skills and abilities.
+Why not? I like challenges so why not creating an operating system. I want to have deeper insights on how computers work and create projects to sharpen my skills and abilities.
 
 ## 2. Compiling
 Before compiling you need:

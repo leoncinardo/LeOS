@@ -3,6 +3,7 @@
 #include <arch/x86_64/include/ioPorts.h>
 
 
+// Limine already masked all IRQs
 void picDisable(void) {
 	// https://helppc.netcore2k.net/hardware/8259
 	outb(picMasterCommand, 0x11);

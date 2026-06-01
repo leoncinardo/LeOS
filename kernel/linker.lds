@@ -1,13 +1,11 @@
 /* Basically straight up copied from https://github.com/Limine-Bootloader/limine-c-template/blob/trunk/kernel/linker-scripts/x86_64.lds */
 
-/* Tell the linker that we want an x86_64 ELF64 output file */
 OUTPUT_FORMAT(elf64-x86-64)
 
 ENTRY(kernelMain)
 
 /* Define the program headers we want so the bootloader gives us the right */
-/* MMU permissions; this also allows us to exert more control over the linking */
-/* process.*/
+/* MMU permissions; this also allows us to exert more control over the linking process */
 PHDRS
 {
     limine_requests PT_LOAD;
@@ -18,11 +16,9 @@ PHDRS
 
 SECTIONS
 {
-    /* We want to be placed in the topmost 2GiB of the address space, for optimisations */
-    /* and because that is what the Limine spec mandates. */
-    /* Any address in this region will do, but often 0xffffffff80000000 is chosen as */
-    /* that is the beginning of the region. */
     . = 0xffffffff80000000;
+
+    kStartPtr = .;
 
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
     .limine_requests : {
@@ -67,8 +63,7 @@ SECTIONS
         *(COMMON)
     } :data
 
-	/* This may become useful? For now i put i here */
-	kernelSize = . - 0xffffffff80000000;
+	kEndPtr = .;
 
     /* Discard .note.* and .eh_frame* since they may cause issues on some hosts. */
     /DISCARD/ : {

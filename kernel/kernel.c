@@ -24,16 +24,35 @@ static volatile struct limine_date_at_boot_request limineBootDateRequest = {
 };
 
 
-static void halt() {
+__attribute__((noreturn)) static void halt() {
+	asm volatile("cli");
     for (;;) asm volatile("hlt");
 }
 
+// Yes, for now it's ugly
+static void printDate(void) {
+	uint64_t unixTime = limineBootDateRequest.response->timestamp;
+	uint32_t bootDays = (unixTime / 86400) + 719067;
+	uint16_t bootYear = bootDays / 365;
+	bootDays %= 365;
+	uint8_t bootMonth = bootDays / 30;
+	bootDays %= 30;
 
-void __attribute__((section(".entry"))) kernelMain(void) {
+	uint16_t bootSeconds = unixTime % 60;
+	unixTime /= 60;
+	uint16_t bootMinutes = unixTime % 60;
+	unixTime /= 60;
+	uint16_t bootHour = unixTime % 24;
+	unixTime /= 24;
+
+	kPrintf("Boot time and date: %u:%u:%u %u/%u/%u \n\n", bootHour, bootMinutes, bootSeconds, bootDays, bootMonth, bootYear);
+}
+
+__attribute__((section(".entry"), noreturn)) void kernelMain(void) {
 	asm volatile("cli");
 
-    // If revisions don't match we have quite a problem
-    if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) halt();
+	// If Limine revisions don't match we have quite a problem
+	if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) halt();
 
 	gdtInit();
 	sseEnable();
@@ -41,14 +60,19 @@ void __attribute__((section(".entry"))) kernelMain(void) {
 	
 	asm volatile("sti");
 	
+	// Init graphics
 	if (screenInit()) halt();
-	screenPaintBackground(defScreenBackgroundColour);
 
-	if (serialInit()) kPrintf("%bFailed:%b setup of serial ports driver\n", 0xED2139, 0xFFFFFF);
-	if (pmmInit()) kPrintf("%bFailed:%b init of physical page frame allocator\n", 0xED2139, 0xFFFFFF);
+	// Display logo(yes I know it's not pretty to do it like this)
+	kPrintf("\n%b  ░█░░░█▀▀░█▀█░█▀▀\n  ░█░░░█▀▀░█░█░▀▀█\n  ░▀▀▀░▀▀▀░▀▀▀░▀▀▀\n\n", defTextInfoColour);
 
-	kPrintf("\n%b-- // FeatherOS\n\n", 0x67E544);
-	kPrintf("sizeof gdtEntry_t: %u", sizeof(gdtEntry_t));
+	// Display boot date and time
+	if (limineBootDateRequest.response != NULL) printDate();
+
+	if (serialInit()) kPrintf("  %bError%b > setup of serial ports driver failed!\n", defTextErrorColour, defTextColour);
+	if (pmmInit()) kPrintf("  %bError%b > init of physical page frame allocator failed!\n", defTextErrorColour, defTextColour);
+
+	kPrintf("\n  >> Nothing to do. Halting!");
 
     halt();
 }

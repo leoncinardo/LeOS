@@ -45,7 +45,8 @@ override CFLAGS += \
     -fno-lto \
     -fno-PIC \
     -ffunction-sections \
-    -fdata-sections
+    -fdata-sections \
+    -fexec-charset=cp437
 
 override CPPFLAGS := \
     -I . \
@@ -73,8 +74,7 @@ ifeq ($(ARCH), x86_64)
         -march=x86-64 \
         -mabi=sysv \
         -mno-80387 \
-        -mno-mmx \
-		-mno-sse \
+        -mgeneral-regs-only \
         -mno-red-zone \
         -mcmodel=kernel
 

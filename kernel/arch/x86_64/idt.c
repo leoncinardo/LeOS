@@ -1,5 +1,6 @@
 
 #include <stdint.h>
+#include <stddef.h>
 #include <arch/x86_64/include/gdt.h>
 #include <arch/x86_64/include/idt.h>
 #include <arch/x86_64/include/pic.h>
@@ -46,21 +47,31 @@ static const char *isrExceptionsNames[] = {
 };
 
 
-void isrExceptionHandler(intStackFrame_t *restrict stackFrame) {
-	kPrintf("\n\nException: %s", isrExceptionsNames[stackFrame->intIndex]);
+__attribute__((interrupt)) void isrExceptionHandler(intStackFrameException_t *stackFrame) {
+	kPrintf("\n\n  %bKERNEL PANIC!%b > %s\n", defTextErrorColour, defTextColour, isrExceptionsNames[stackFrame->intIndex]);
+    kPrintf("  Interrupt index: %u  Error code: %u\n\n", stackFrame->intIndex, stackFrame->errorCode);
+    kPrintf("  RIP: 0x%X  CS: 0x%X  RFLAGS: 0x%X\n", stackFrame->rip, stackFrame->cs, stackFrame->cpuFlags);
+    kPrintf("  RBP: 0x%X  RSP: 0x%X  SS: 0x%X\n\n", stackFrame->rbp, stackFrame->rsp, stackFrame->ss);
 
+    // General purpose registers
+    kPrintf("  RAX: 0x%X  RCX: 0x%X  RDX: 0x%X\n", stackFrame->rax, stackFrame->rcx, stackFrame->rdx);
+    kPrintf("  RSI: 0x%X  RDI: 0x%X  R8: 0x%X  R9: 0x%X\n", stackFrame->rsi, stackFrame->rdi, stackFrame->r8, stackFrame->r9);
+    kPrintf("  R10: 0x%X  R11: 0x%X  R12: 0x%X\n", stackFrame->r10, stackFrame->r11, stackFrame->r12);
+    kPrintf("  R13: 0x%X  R14: 0x%X  R15: 0x%X", stackFrame->r13, stackFrame->r14, stackFrame->r15);
+
+    asm volatile("cli");
+    for (;;) asm volatile("hlt");
 }
-
 
 static void idtSetEntry(uint8_t i, uint64_t *restrict isrAddr, uint8_t ist, uint8_t flags) {
 	idt[i].isr0 = ((uint64_t)isrAddr & 0xFFFF);
 	idt[i].kernelCs = kernelCodeSeg;
 	idt[i].ist = ist;
 	idt[i].flags = flags;
-	idt[i].isr1 = ((uint64_t)isrAddr >> 16) & 0xFFFFFFFFFFFF;
+	idt[i].isr1 = ((uint64_t)isrAddr >> 16) & 0xFFFF;
+    idt[i].isr2 = ((uint64_t)isrAddr >> 32) & 0xFFFFFFFF;
 	idt[i].reserved = 0;
 }
-
 
 void idtInit(void) {
 	idtIdtr_t idtr;
@@ -68,7 +79,7 @@ void idtInit(void) {
 	isrSetStubTable();
 
 	// Set all exceptions
-	for (uint8_t i = 0; i < 32; i++) {
+	for (size_t i = 0; i < 32; i++) {
 		idtSetEntry(i, isrStubTable[i], 0, 0x8F);
 	}
 

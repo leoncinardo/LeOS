@@ -5,6 +5,7 @@
 #include <limine.h>
 #include <graphics/include/screen.h>
 #include <graphics/include/print.h>
+#include <graphics/include/font.h>
 #include <include/string.h>
 
 __attribute__((used, section(".limine_requests")))
@@ -19,30 +20,30 @@ static uint64_t framebufferWidth;
 static uint64_t framebufferHeight;
 static uint64_t framebufferPitch;
 static uint32_t framebufferBpp;
-extern const uint8_t font8x16[];
 
+extern const struct fontStruct font8x16;
+static const uint8_t *currentFontBitmap;
+static uint8_t currentFontWidth;
+static uint8_t currentFontHeight;
 static uint32_t textPosX, textPosY = 0;
-static uint32_t screenBackgroundColour, screenForegroundColour, screenAccentColour;
+static uint32_t backgroundColour, foregroundColour, accentColour;
 
-static void (*kPrintfSpecifiersFuncs[31])(va_list *restrict argsListPtr);
+static void (*kPrintfSpecifiersFuncs[31])(va_list *);
 
 
 // -- kPrintf and subsequent functions -- 
 
 
-int kPrintf(const char *restrict stringPtr, ...) {
+void kPrintf(const char *restrict stringPtr, ...) {
 	va_list argsList;
 	va_start(argsList, stringPtr);
 
-	char *curChar;
-	char specifier;
-	size_t charX, charY;
-
-	for (size_t i = 0; stringPtr[i]; i++) {
+	for (size_t i = 0; (uint8_t)stringPtr[i]; i++) {
 		if (stringPtr[i] == '%') {
-			specifier = stringPtr[++i];
+			uint8_t specifier = stringPtr[++i];
 
-			if (specifier == '%') goto kPrintfCharPrintLoop;
+			if (!specifier) break;
+			if (specifier == '%') goto kPrintfCharPrint;
 			if (specifier < 'A' || specifier > 'z') continue; // If not a letter ignore it
 
 			// If a lowercase letter
@@ -53,128 +54,143 @@ int kPrintf(const char *restrict stringPtr, ...) {
 			} else if (specifier <= 'Z') {
 				// I could do the same thing for uppercase letters but it would be a waste of memory for only 5 of them being used
 				switch (specifier) {
-					case 0x41: kPrintfSpecifiersFuncs[26](&argsList); break; // "A"
-					case 0x45: kPrintfSpecifiersFuncs[27](&argsList); break; // "E"
-					case 0x46: kPrintfSpecifiersFuncs[28](&argsList); break; // "F"
-					case 0x47: kPrintfSpecifiersFuncs[29](&argsList); break; // "G"
-					case 0x58: kPrintfSpecifiersFuncs[30](&argsList); break; // "X"
+					case 'A': kPrintfSpecifiersFuncs[26](&argsList); break;
+					case 'E': kPrintfSpecifiersFuncs[27](&argsList); break;
+					case 'F': kPrintfSpecifiersFuncs[28](&argsList); break;
+					case 'G': kPrintfSpecifiersFuncs[29](&argsList); break;
+					case 'X': kPrintfSpecifiersFuncs[30](&argsList); break;
 
 					default: continue;
 				}
 			}
 
 		} else if (stringPtr[i] == ' ') {
-			textPosX += fontCharWidth;
+			textPosX += currentFontWidth;
 			continue;
 		
 		} else if (stringPtr[i] == '\n') {
 			textPosX = 0;
-			textPosY += fontCharHeight;
+			textPosY += currentFontHeight;
+			continue;
+
+		} else if (stringPtr[i] == '\t') {
+			textPosX += currentFontWidth * 4;
+			if (textPosX >= framebufferWidth) {
+				textPosX = 0;
+				textPosY += currentFontHeight;
+			}
+
 			continue;
 
 		} else {
-			kPrintfCharPrintLoop:
-			if (textPosX + fontCharWidth > framebufferWidth) {
+			kPrintfCharPrint:
+			if (textPosX + currentFontWidth > framebufferWidth) {
 				textPosX = 0;
-				textPosY += fontCharHeight;
+				textPosY += currentFontHeight;
 			}
 
-			curChar = font8x16 + (stringPtr[i] * fontCharHeight);
+			const uint8_t *glyph = currentFontBitmap + ((uint8_t)stringPtr[i] * currentFontHeight);
 
-			for (charY = 0; charY < fontCharHeight; charY++) {
-				uint32_t *charRow = (uint32_t*)(framebufferPtr + (textPosX * framebufferBpp + (textPosY + charY)* framebufferPitch));
-				uint8_t charGlyph = curChar[charY];
+			for (size_t charY = 0; charY < currentFontHeight; charY++) {
+				uint32_t *glyphRow = (uint32_t *)(framebufferPtr + (textPosY + charY) * framebufferPitch + textPosX * framebufferBpp);
+				uint8_t charGlyph = glyph[charY];
 
-				for (charX = 0; charX < fontCharWidth; charX++) {
-					if (charGlyph & (0x80 >> charX)) charRow[charX] = screenForegroundColour;
+				for (size_t charX = 0; charX < currentFontWidth; charX++) {
+					if (charGlyph & (0x80 >> charX)) glyphRow[charX] = foregroundColour;
 				}
 			}
 
-			textPosX += fontCharWidth;
+			textPosX += currentFontWidth;
 		}
 	}
 
 	va_end(argsList);
-	screenForegroundColour = defScreenForegroundColour;
-
-	return 0;
+	foregroundColour = defTextColour;
 }
 
 static inline void kPrintfDrawChar(uint8_t charToDraw) {
-	size_t charX, charY;
-
-	// Check if we can write the char
-	if (textPosX + fontCharWidth > framebufferWidth) {
+	if (textPosX + currentFontWidth > framebufferWidth) {
 		textPosX = 0;
-		textPosY += fontCharHeight;
+		textPosY += currentFontHeight;
 	}
 
 	// 8 by 16 bits = 16 bytes per char so every byte describes a row
-	const char *curChar = font8x16 + (charToDraw * fontCharHeight);
+	const uint8_t *glyph = currentFontBitmap + (charToDraw * currentFontHeight);
 
-	for (charY = 0; charY < fontCharHeight; charY++) {
-		uint32_t *charRow = (uint32_t*)(framebufferPtr + (textPosX * framebufferBpp + (textPosY + charY)* framebufferPitch));
-		uint8_t charGlyph = curChar[charY];
+	for (size_t charY = 0; charY < currentFontHeight; charY++) {
+		uint32_t *glyphRow = (uint32_t *)(framebufferPtr + (textPosY + charY)* framebufferPitch + textPosX * framebufferBpp);
+		uint8_t charGlyph = glyph[charY];
 
 		// Check every pixel in a row
-		for (charX = 0; charX < fontCharWidth; charX++) {
+		for (size_t charX = 0; charX < currentFontWidth; charX++) {
 			// If pixel is in glyph and the mask(bit 7 shifted to the right by charX positions) then draw it
-			if (charGlyph & (0x80 >> charX)) charRow[charX] = screenForegroundColour;
+			if (charGlyph & (0x80 >> charX)) glyphRow[charX] = foregroundColour;
 		}
 	}
 
-	textPosX += fontCharWidth;
+	textPosX += currentFontWidth;
 }
 
-static void kPrintfC(va_list *restrict argsListPtr) {
+static void kPrintfC(va_list *argsListPtr) {
 	int arg = va_arg(*argsListPtr, int);
-	kPrintfDrawChar((uint8_t) arg);
+	kPrintfDrawChar((uint8_t)arg);
 }
 
-static void kPrintfS(va_list *restrict argsListPtr) {
+static void kPrintfS(va_list *argsListPtr) {
 	char *arg = va_arg(*argsListPtr, char*);
-	char *curChar;
-	size_t i, charX, charY;
 
-	for (i = 0; arg[i]; i++) {
+	for (size_t i = 0; arg[i]; i++) {
 		if (arg[i] == '\n') {
 			textPosX = 0;
-			textPosY += fontCharHeight;
+			textPosY += currentFontHeight;
 		}
 		
-		kPrintfDrawChar(arg[i]);
+		kPrintfDrawChar((uint8_t)arg[i]);
 	}
 }
 
-static void kPrintfD(va_list *restrict argsListPtr) {
+static void kPrintfD(va_list *argsListPtr) {
 	int arg = va_arg(*argsListPtr, int);
-	char* stringBuffer = intToString(arg);
+	char stringBuffer[13];
+	intToString(arg, stringBuffer, 13);
 
 	for (size_t i = 0; stringBuffer[i]; i++) {
 		kPrintfDrawChar(stringBuffer[i]);
 	}
 }
 
-static void kPrintfU(va_list *restrict argsListPtr) {
+static void kPrintfU(va_list *argsListPtr) {
 	uint32_t arg = va_arg(*argsListPtr, uint32_t);
-	char* stringBuffer = intToString(arg);
+	char stringBuffer[13];
+	uintToString(arg, stringBuffer, 13);
 
 	for (size_t i = 0; stringBuffer[i]; i++) {
 		kPrintfDrawChar(stringBuffer[i]);
 	}
 }
 
-static void kPrintfChangeColour(va_list *restrict argsListPtr) {
-	uint32_t arg = va_arg(*argsListPtr, uint32_t);
-	screenForegroundColour = arg;
+static void kPrintfX(va_list *argsListPtr) {
+	uint64_t arg = va_arg(*argsListPtr, uint64_t);
+	char stringBuffer[19];
+	hexToString(arg, stringBuffer, 19);
+
+	for (size_t i = 0; stringBuffer[i]; i++) {
+		kPrintfDrawChar(stringBuffer[i]);
+	}
 }
 
-static void kPrintfPlaceholder(va_list *restrict argsListPtr) {
+
+static void kPrintfChangeColour(va_list *argsListPtr) {
+	uint32_t arg = va_arg(*argsListPtr, uint32_t);
+	foregroundColour = arg;
+}
+
+static void kPrintfPlaceholder(__attribute__((unused)) va_list *argsListPtr) {
 	return;
 }
 
 // Since the functions associated to the specifiers are defined above I can't assign them where i declared this array
-static void (*kPrintfSpecifiersFuncs[31])(va_list *restrict argsListPtr) = {
+static void (*kPrintfSpecifiersFuncs[31])(va_list *argsListPtr) = {
 	kPrintfPlaceholder, kPrintfChangeColour, kPrintfC, kPrintfD, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder,
 	kPrintfD, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder,
 	kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfPlaceholder, kPrintfS, kPrintfPlaceholder,
@@ -183,7 +199,7 @@ static void (*kPrintfSpecifiersFuncs[31])(va_list *restrict argsListPtr) = {
 	kPrintfPlaceholder, // "E"
 	kPrintfPlaceholder, // "F"
 	kPrintfPlaceholder, // "G"
-	kPrintfPlaceholder // "X"
+	kPrintfX // "X"
 };
 
 
@@ -191,15 +207,14 @@ static void (*kPrintfSpecifiersFuncs[31])(va_list *restrict argsListPtr) = {
 
 
 void kPrintChar(const char c, uint32_t posX, uint32_t posY) {
-	size_t charX, charY;
-	char* restrict curChar = font8x16 + (c * fontCharHeight);
+	const uint8_t *glyph = currentFontBitmap + (c * currentFontHeight);
 
-	for (charY = 0; charY < fontCharHeight; charY++) {
-		uint32_t *charRow = (uint32_t*)(framebufferPtr + (posX * framebufferBpp + (posY + charY)* framebufferPitch));
-		uint8_t charGlyph = curChar[charY];
+	for (size_t charY = 0; charY < currentFontHeight; charY++) {
+		uint32_t *glyphRow = (uint32_t*)(framebufferPtr + (posX * framebufferBpp + (posY + charY)* framebufferPitch));
+		uint8_t charGlyph = glyph[charY];
 
-		for (charX = 0; charX < fontCharWidth; charX++) {
-			if (charGlyph & (0x80 >> charX)) charRow[charX] = screenForegroundColour;
+		for (size_t charX = 0; charX < currentFontWidth; charX++) {
+			if (charGlyph & (0x80 >> charX)) glyphRow[charX] = foregroundColour;
 		}
 	}
 
@@ -208,29 +223,27 @@ void kPrintChar(const char c, uint32_t posX, uint32_t posY) {
 void kPrint(const char *restrict stringPtr, uint32_t posX, uint32_t posY) {
 	uint32_t x = posX;
 	uint32_t y = posY;
-	char *curChar;
-	size_t i, charX, charY;
 
-	for (i = 0; stringPtr[i]; i++) {
+	for (size_t i = 0; stringPtr[i]; i++) {
 		// Check if we can write the char
-		if (x + fontCharWidth > framebufferWidth) {
+		if (x + currentFontWidth > framebufferWidth) {
 			x = 0;
-			y += fontCharHeight;
+			y += currentFontHeight;
 		}
 
 		// 8 by 16 bits = 16 bytes per char so every byte describes a row
-		curChar = font8x16 + (stringPtr[i] * fontCharHeight);
+		const uint8_t *glyph = currentFontBitmap + (stringPtr[i] * currentFontHeight);
 
-		for (charY = 0; charY < fontCharHeight; charY++) {
-			uint32_t *charRow = (uint32_t*)(framebufferPtr + (x * framebufferBpp + (y + charY)* framebufferPitch));
-			uint8_t charGlyph = curChar[charY];
+		for (size_t charY = 0; charY < currentFontHeight; charY++) {
+			uint32_t *glyphRow = (uint32_t*)(framebufferPtr + (x * framebufferBpp + (y + charY)* framebufferPitch));
+			uint8_t charGlyph = glyph[charY];
 
-			for (charX = 0; charX < fontCharWidth; charX++) {
-				if (charGlyph & (0x80 >> charX)) charRow[charX] = screenForegroundColour;
+			for (size_t charX = 0; charX < currentFontWidth; charX++) {
+				if (charGlyph & (0x80 >> charX)) glyphRow[charX] = foregroundColour;
 			}
 		}
 
-		x += fontCharWidth;
+		x += currentFontWidth;
 	}
 
 }
@@ -279,9 +292,13 @@ int screenInit(void) {
 
 	if (framebuffer == NULL) return 1;
 
-	screenBackgroundColour = defScreenBackgroundColour;
-	screenForegroundColour = defScreenForegroundColour;
-	screenAccentColour = defScreenAccentColour;
+	backgroundColour = defBackgroundColour;
+	foregroundColour = defTextColour;
+	accentColour = defAccentColour;
+
+	currentFontBitmap = font8x16.font;
+	currentFontWidth = font8x16.fontWidth;
+	currentFontHeight = font8x16.fontHeight;
 
 	return 0;
 }
