@@ -1,6 +1,4 @@
 
-// Part of this file is from musl libc: https://musl.libc.org/
-
 #include <include/string.h>
 
 
@@ -44,8 +42,7 @@ void *memmove(void *dest, const void *src, size_t n) {
 }
 
 int memcmp(const void *vl, const void *vr, size_t n) {
-	const uint8_t *l=vl, *r=vr;
+	const uint8_t *l = vl, *r = vr;
 	for (; n && *l == *r; n--, l++, r++);
-	return n ? *l-*r : 0;
-    
+	return n ? *l - *r : 0;
 }

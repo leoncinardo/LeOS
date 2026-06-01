@@ -11,8 +11,6 @@
 #include <graphics/include/screen.h>
 #include <graphics/include/print.h>
 
-extern void sseEnable(void); 
-
 __attribute__((used, section(".limine_requests_start"))) static volatile uint64_t limineRequestsStartMarker[] = LIMINE_REQUESTS_START_MARKER;
 __attribute__((used, section(".limine_requests"))) static volatile uint64_t limineBaseRevision[] = LIMINE_BASE_REVISION(6);
 __attribute__((used, section(".limine_requests_end"))) static volatile uint64_t limineRequestsEndMarker[] = LIMINE_REQUESTS_END_MARKER;
@@ -45,7 +43,7 @@ static void printDate(void) {
 	uint16_t bootHour = unixTime % 24;
 	unixTime /= 24;
 
-	kPrintf("Boot time and date: %u:%u:%u %u/%u/%u \n\n", bootHour, bootMinutes, bootSeconds, bootDays, bootMonth, bootYear);
+	kPrintf("Boot time and date: %u:%u %u/%u/%u \n\n", bootHour, bootMinutes, bootSeconds, bootDays, bootMonth, bootYear);
 }
 
 __attribute__((section(".entry"), noreturn)) void kernelMain(void) {
@@ -55,7 +53,6 @@ __attribute__((section(".entry"), noreturn)) void kernelMain(void) {
 	if (LIMINE_BASE_REVISION_SUPPORTED(limineBaseRevision) == false) halt();
 
 	gdtInit();
-	sseEnable();
 	idtInit();
 	
 	asm volatile("sti");
@@ -69,10 +66,10 @@ __attribute__((section(".entry"), noreturn)) void kernelMain(void) {
 	// Display boot date and time
 	if (limineBootDateRequest.response != NULL) printDate();
 
-	if (serialInit()) kPrintf("  %bError%b > setup of serial ports driver failed!\n", defTextErrorColour, defTextColour);
-	if (pmmInit()) kPrintf("  %bError%b > init of physical page frame allocator failed!\n", defTextErrorColour, defTextColour);
+	if (serialInit()) kPrintf("%bError%b > setup of serial ports driver failed!\n", defTextErrorColour, defTextColour);
+	if (pmmInit()) kPrintf("%bError%b > init of physical page frame allocator failed!\n", defTextErrorColour, defTextColour);
 
-	kPrintf("\n  >> Nothing to do. Halting!");
+	kPrintf("\nNothing to do. Halting!");
 
     halt();
 }

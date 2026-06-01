@@ -61,15 +61,13 @@ static void bitmapSetContiguous(const void *startPtr, size_t size) {
 	size_t bitmapCol = firstPage % pmmBitmapBitsPerEntry;
 	size_t nPages = (size + memoryPageSize - 1) / memoryPageSize;
 
-	for (size_t i = 0; i < nPages; i++) {
+	for (size_t i = 0; i < nPages; i++, bitmapCol++, pmmFreePages--) {
 		if (bitmapCol > pmmBitmapBitsPerEntry - 1) {
 			bitmapCol = 0;
 			bitmapRow++;
 		}
 
 		pmmBitmap[bitmapRow] |= (uint64_t)1 << bitmapCol;
-		bitmapCol++;
-		pmmFreePages--;
 	}
 }
 
@@ -79,15 +77,13 @@ static void bitmapClearContiguous(const void *startPtr, size_t size) {
 	size_t bitmapCol = firstPage % pmmBitmapBitsPerEntry;
 	size_t nPages = (size + memoryPageSize - 1) / memoryPageSize;
 
-	for (size_t i = 0; i < nPages; i++) {
+	for (size_t i = 0; i < nPages; i++, bitmapCol++, pmmFreePages++) {
 		if (bitmapCol > pmmBitmapBitsPerEntry - 1) {
 			bitmapCol = 0;
 			bitmapRow++;
 		}
 
 		pmmBitmap[bitmapRow] &= ~((uint64_t)1 << bitmapCol);
-		bitmapCol++;
-		pmmFreePages++;
 	}
 }
 
@@ -156,11 +152,11 @@ int pmmInit(void) {
 	bitmapSetContiguous((void *)((uint64_t)pmmBitmap - hhdmOffset), pmmBitmapSize);
 	bitmapSetContiguous((void *)((uint64_t)kStartPtr - kVirtualAddr + kPhysicalAddr), kSize);
 
-	kPrintf("  %bPMM%b > %u MB of memory detected, %u MB of usable memory\n", defTextInfoColour, defTextColour, pmmGetTotalMem() / 1024000, pmmGetFreeMem() / 1024000);
-	kPrintf("\t  > %u memmap entries\n", memMapEntriesCount);
-	kPrintf("\t  > size of bitmap = %u.%u KB\n", pmmBitmapSize / 1024, pmmBitmapSize % 1024);
-	kPrintf("\t  > kernel physical address = 0x%X\n", (uint64_t)kStartPtr - kVirtualAddr + kPhysicalAddr);
-	kPrintf("\t  > size of kernel = %u.%u KB\n", kSize / memoryPageSize, kSize % memoryPageSize);
+	kPrintf("%bPMM%b > %u MB of memory detected, %u MB of usable memory\n", defTextInfoColour, defTextColour, pmmGetTotalMem() / 1024000, pmmGetFreeMem() / 1024000);
+	kPrintf("\t| %u memmap entries\n", memMapEntriesCount);
+	kPrintf("\t| size of bitmap = %u.%u KB\n", pmmBitmapSize / 1024, pmmBitmapSize % 1024);
+	kPrintf("\t| kernel physical address = 0x%X\n", (uint64_t)kStartPtr - kVirtualAddr + kPhysicalAddr);
+	kPrintf("\t| size of kernel = %u.%u KB\n", kSize / memoryPageSize, kSize % memoryPageSize);
 
 	return 0;
 }

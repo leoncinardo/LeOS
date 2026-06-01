@@ -18,8 +18,8 @@ static struct limine_framebuffer *framebuffer = NULL;
 static volatile uint32_t *framebufferPtr;
 static uint64_t framebufferWidth;
 static uint64_t framebufferHeight;
-static uint64_t framebufferPitch;
 static uint32_t framebufferBpp;
+static uint64_t framebufferPitch;
 
 extern const struct fontStruct font8x16;
 static const uint8_t *currentFontBitmap;
@@ -285,8 +285,8 @@ int screenInit(void) {
 		framebufferPtr = framebuffer->address;
 		framebufferWidth = framebuffer->width;
 		framebufferHeight = framebuffer->height;
-		framebufferPitch = framebuffer->pitch / 4;
 		framebufferBpp = framebuffer->bpp / 32;
+		framebufferPitch = framebuffer->pitch / 4;
 		break;
 	}
 
