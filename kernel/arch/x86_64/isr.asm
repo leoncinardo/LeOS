@@ -10,6 +10,8 @@ SECTION .text
 %macro setIsrException 1
 	GLOBAL isrStub%+%1
     isrStub%+%1:
+		cli
+
 		%ifn %1 == 8 || %1 == 10 || %1 == 11 || %1 == 12 || %1 == 13 || %1 == 14 || %1 == 17 || %1 == 21 || %1 == 29 || %1 == 30
 			push 0 ; Fake error code
 		%endif
@@ -43,6 +45,7 @@ isrStubExceptionCommon:
 	push r14
 	push r15
 
+	; Stack is already 16-byte aligned
 	mov rdi, rsp ; First argument for isrHandler
 	call isrExceptionHandler
 
@@ -74,7 +77,7 @@ isrSetStubTable:
 	%assign i 0
     %rep 32
         lea rax, isrStub%+i
-		mov [rdi + i*8], rax
+		mov [rdi + i * 8], rax
 
         %assign i i + 1
     %endrep

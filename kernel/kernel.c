@@ -11,11 +11,11 @@
 #include <graphics/include/screen.h>
 #include <graphics/include/print.h>
 
-__attribute__((used, section(".limine_requests_start"))) static volatile uint64_t limineRequestsStartMarker[] = LIMINE_REQUESTS_START_MARKER;
-__attribute__((used, section(".limine_requests"))) static volatile uint64_t limineBaseRevision[] = LIMINE_BASE_REVISION(6);
-__attribute__((used, section(".limine_requests_end"))) static volatile uint64_t limineRequestsEndMarker[] = LIMINE_REQUESTS_END_MARKER;
+__attribute__((used, section(".limineRequestsStart"))) static volatile uint64_t limineRequestsStartMarker[] = LIMINE_REQUESTS_START_MARKER;
+__attribute__((used, section(".limineRequests"))) static volatile uint64_t limineBaseRevision[] = LIMINE_BASE_REVISION(6);
+__attribute__((used, section(".limineRequestsEnd"))) static volatile uint64_t limineRequestsEndMarker[] = LIMINE_REQUESTS_END_MARKER;
 
-__attribute__((used, section(".limine_requests")))
+__attribute__((used, section(".limineRequests")))
 static volatile struct limine_date_at_boot_request limineBootDateRequest = {
 	.id = LIMINE_DATE_AT_BOOT_REQUEST_ID,
 	.revision = 6
@@ -29,21 +29,20 @@ __attribute__((noreturn)) static void halt() {
 
 // Yes, for now it's ugly
 static void printDate(void) {
-	uint64_t unixTime = limineBootDateRequest.response->timestamp;
-	uint32_t bootDays = (unixTime / 86400) + 719067;
+	int64_t unixTime = limineBootDateRequest.response->timestamp;
+	uint32_t bootDays = (unixTime / 86400) + 719066;
 	uint16_t bootYear = bootDays / 365;
 	bootDays %= 365;
 	uint8_t bootMonth = bootDays / 30;
 	bootDays %= 30;
 
-	uint16_t bootSeconds = unixTime % 60;
 	unixTime /= 60;
 	uint16_t bootMinutes = unixTime % 60;
 	unixTime /= 60;
 	uint16_t bootHour = unixTime % 24;
 	unixTime /= 24;
 
-	kPrintf("Boot time and date: %u:%u %u/%u/%u \n\n", bootHour, bootMinutes, bootSeconds, bootDays, bootMonth, bootYear);
+	kPrintf("Boot time and date: %u:%u %u/%u/%u\n\n", bootHour, bootMinutes, bootDays, bootMonth, bootYear);
 }
 
 __attribute__((section(".entry"), noreturn)) void kernelMain(void) {
@@ -61,15 +60,14 @@ __attribute__((section(".entry"), noreturn)) void kernelMain(void) {
 	if (screenInit()) halt();
 
 	// Display logo(yes I know it's not pretty to do it like this)
-	kPrintf("\n%b  ░█░░░█▀▀░█▀█░█▀▀\n  ░█░░░█▀▀░█░█░▀▀█\n  ░▀▀▀░▀▀▀░▀▀▀░▀▀▀\n\n", defTextInfoColour);
+	kPrintf("\n%b ░█▀▀░█▀▀░█▀█░▀█▀░█░█░█▀▀░█▀▄░█▀█░█▀▀\n ░█▀▀░█▀▀░█▀█░░█░░█▀█░█▀▀░█▀▄░█░█░▀▀█\n ░▀░░░▀▀▀░▀░▀░░▀░░▀░▀░▀▀▀░▀░▀░▀▀▀░▀▀▀\n\n", def_text_info_colour);
 
 	// Display boot date and time
 	if (limineBootDateRequest.response != NULL) printDate();
 
-	if (serialInit()) kPrintf("%bError%b > setup of serial ports driver failed!\n", defTextErrorColour, defTextColour);
-	if (pmmInit()) kPrintf("%bError%b > init of physical page frame allocator failed!\n", defTextErrorColour, defTextColour);
+	if (serialInit()) kPrintf("%bError%b > setup of serial ports driver failed!\n", def_text_error_colour, def_text_colour);
+	if (pmmInit()) kPrintf("%bError%b > init of physical page frame allocator failed!\n", def_text_error_colour, def_text_colour);
 
-	kPrintf("\nNothing to do. Halting!");
-
+	kPrintf("\n>> Nothing to do. Halting!");
     halt();
 }

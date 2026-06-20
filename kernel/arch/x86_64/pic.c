@@ -6,20 +6,20 @@
 // Limine already masked all IRQs
 void picDisable(void) {
 	// https://helppc.netcore2k.net/hardware/8259
-	outb(picMasterCommand, 0x11);
-	outb(picSlaveCommand, 0x11);
+	outb(pic_master_command, 0x11);
+	outb(pic_slave_command, 0x11);
 
-	outb(picMasterData, 0x20);
-	outb(picSlaveCommand, 0x28);
+	outb(pic_master_data, 0x20);
+	outb(pic_slave_command, 0x28);
 
-	outb(picMasterCommand, 0x4);
-	outb(picSlaveCommand, 0x2);
+	outb(pic_master_command, 0x4);
+	outb(pic_slave_command, 0x2);
 
-	outb(picMasterCommand, 0x1);
-	outb(picSlaveCommand, 0x1);
+	outb(pic_master_command, 0x1);
+	outb(pic_slave_command, 0x1);
 
 	// Masks every interrupt
-	outb(picMasterData, 0xFF);
-	outb(picSlaveData, 0xFF);
+	outb(pic_master_data, 0xFF);
+	outb(pic_slave_data, 0xFF);
 
 }

@@ -6,18 +6,18 @@
 // those I already put, eg: kernel data read-only
 
 
-__attribute__((aligned(0x10))) static gdtEntry_t gdt[gdtEntries];
+__attribute__((aligned(0x10))) static gdtEntry_t gdt[gdt_entries];
 extern void gdtLoad(gdtGdtr_t *gdtr);
 
 
 static void gdtSetEntry(uint8_t i, uint64_t base, uint32_t limit, uint8_t access, uint8_t flags) {
-	if (i > gdtEntries - 1) return;
+	if (i > gdt_entries - 1) return;
 
 	gdt[i].access = access;
 	gdt[i].flags = flags;
 
 	// For non-system seg descriptors base and limit values are ignored
-	if (base == 0 && limit == 0) {
+	if (!base && !limit) {
 		gdt[i].limit0 = 0;
 		gdt[i].limit1 = 0;
 		gdt[i].base0 = 0;

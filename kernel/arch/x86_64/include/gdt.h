@@ -3,14 +3,14 @@
 
 #include <stdint.h>
 
-#define gdtEntries 6
+#define gdt_entries 6
 
-#define kernelCodeSeg 0x10
-#define kernelDataSeg 0x20
-#define userCodeSeg 0x30
-#define userDataSeg 0x40
-#define kernelTssSeg 0x50
-#define tssSeg 0x60
+#define kernel_code_seg 0x10
+#define kernel_data_seg 0x20
+#define user_code_seg 0x30
+#define user_data_seg 0x40
+#define kernel_tss_seg 0x50
+#define tss_seg 0x60
 
 
 typedef struct {

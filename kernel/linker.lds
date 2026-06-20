@@ -8,7 +8,7 @@ ENTRY(kernelMain)
 /* MMU permissions; this also allows us to exert more control over the linking process */
 PHDRS
 {
-    limine_requests PT_LOAD;
+    limineRequests PT_LOAD;
     text PT_LOAD FLAGS((1 << 0) | (1 << 2));
     rodata PT_LOAD FLAGS((1 << 2));
     data PT_LOAD FLAGS((1 << 1)| (1 << 2));
@@ -21,11 +21,11 @@ SECTIONS
     kStartPtr = .;
 
     /* Define a section to contain the Limine requests and assign it to its own PHDR */
-    .limine_requests : {
-        KEEP(*(.limine_requests_start))
-        KEEP(*(.limine_requests))
-        KEEP(*(.limine_requests_end))
-    } :limine_requests
+    .limineRequests : {
+        KEEP(*(.limineRequestsStart))
+        KEEP(*(.limineRequests))
+        KEEP(*(.limineRequestsEnd))
+    } :limineRequests
 
     /* Move to the next memory page for .text */
     . = ALIGN(CONSTANT(MAXPAGESIZE));

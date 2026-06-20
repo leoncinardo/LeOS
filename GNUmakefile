@@ -37,15 +37,12 @@ limine-binary/limine:
 		LDFLAGS="$(HOSTLDFLAGS)" \
 		LIBS="$(HOSTLIBS)"
 
-
 getKernelDeps:
 	$(MAKE) -C kernel getDeps
 
 
-# I think we should compile the kernel, right?
 kernel: getKernelDeps
 	$(MAKE) -C kernel
-
 
 $(IMAGENAME).iso: limine-binary/limine kernel
 	rm -rf isoRoot
@@ -92,14 +89,20 @@ endif
 
 
 run:
-	qemu-system-$(ARCH) -M q35 \
+	qemu-system-$(ARCH) \
+		-M q35 \
 		-cdrom $(IMAGENAME).iso \
 		$(QEMUFLAGS)
 
 debug:
-	qemu-system-$(ARCH) -M q35 \
+	qemu-system-$(ARCH) \
+		-M q35 \
 		-cdrom $(IMAGENAME).iso \
-		$(QEMUFLAGS) -monitor stdio
+		$(QEMUFLAGS) \
+		-monitor stdio \
+		-serial file:serial.log \
+    	-no-shutdown \
+		-no-reboot
 
 clean:
 	$(MAKE) -C kernel clean

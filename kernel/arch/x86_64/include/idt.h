@@ -1,7 +1,7 @@
 
 #pragma once
 
-#define idtEntries 256 // Entries > 256 are ignored
+#define idt_entries 256 // Entries > 256 are ignored
 
 
 typedef struct {

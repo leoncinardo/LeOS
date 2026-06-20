@@ -44,6 +44,9 @@ override CFLAGS += \
     -fno-stack-check \
     -fno-lto \
     -fno-PIC \
+    -mno-mmx \
+    -mno-sse \
+    -mno-sse2 \
     -ffunction-sections \
     -fdata-sections \
     -fexec-charset=cp437
@@ -67,7 +70,8 @@ override LDFLAGS += \
 ifeq ($(ARCH), x86_64)
     override NASMFLAGS := \
         $(patsubst -g, -g -F dwarf, $(NASMFLAGS)) \
-        -Wall
+        -Wall \
+        -f elf64
 
 	override CFLAGS += \
         -m64 \
@@ -151,10 +155,8 @@ ifeq ("$(wildcard limine-protocol freestnd-c-hdrs-0bsd)", "")
 	git clone --depth 1 https://github.com/osdev0/freestnd-c-hdrs-0bsd.git
 endif
 
-
 clean:
 	rm -rf $(BUILDDIR)/bin-$(ARCH) $(BUILDDIR)/obj-$(ARCH)
-
 
 distclean: clean
 	rm -rf freestnd-c-hdrs-0bsd limine-protocol
